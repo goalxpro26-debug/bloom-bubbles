@@ -1,0 +1,39 @@
+images {
+  image: "/art/background.png"
+}
+images {
+  image: "/art/bubble_red.png"
+}
+images {
+  image: "/art/bubble_yellow.png"
+}
+images {
+  image: "/art/bubble_green.png"
+}
+images {
+  image: "/art/bubble_blue.png"
+}
+images {
+  image: "/art/bubble_purple.png"
+}
+images {
+  image: "/art/bubble_pink.png"
+}
+images {
+  image: "/art/shooter.png"
+}
+images {
+  image: "/art/particle.png"
+}
+images {
+  image: "/art/aimdot.png"
+}
+images {
+  image: "/art/star.png"
+}
+images {
+  image: "/art/lock.png"
+}
+margin: 0
+extrude_borders: 2
+inner_padding: 0

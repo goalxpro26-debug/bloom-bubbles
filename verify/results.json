@@ -1,0 +1,72 @@
+[
+  {
+    "name": "page loads, title state reported",
+    "ok": true,
+    "detail": "{\"screen\":\"title\",\"score\":\"0\",\"bubbles\":\"0\",\"shots\":\"0\",\"level\":\"0\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "canvas non-blank (title screenshot, distinct colors)",
+    "ok": true,
+    "detail": "distinct=501"
+  },
+  {
+    "name": "level 1 board populated",
+    "ok": true,
+    "detail": "bubbles=30"
+  },
+  {
+    "name": "level 1 has shots",
+    "ok": true,
+    "detail": "shots=35"
+  },
+  {
+    "name": "manual click fires a bubble (shots decrease)",
+    "ok": true,
+    "detail": "shots 35 -> 34"
+  },
+  {
+    "name": "pause key pauses",
+    "ok": true,
+    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"1\"}"
+  },
+  {
+    "name": "pause key resumes",
+    "ok": true,
+    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "level 1 won by autoplay",
+    "ok": true,
+    "detail": "score=1250 bubbles=0"
+  },
+  {
+    "name": "score increased during play",
+    "ok": true,
+    "detail": "score=1250"
+  },
+  {
+    "name": "level 2 board populated",
+    "ok": true,
+    "detail": "bubbles=50"
+  },
+  {
+    "name": "endless mode scores",
+    "ok": true,
+    "detail": "score 0 -> 40"
+  },
+  {
+    "name": "pause in endless works",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "mute toggle clickable (no crash)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no page/console errors (excluding GD SDK network noise)",
+    "ok": true,
+    "detail": ""
+  }
+]

@@ -1,0 +1,23 @@
+const { chromium } = require('/home/hatch/workspace/tools/pw-shot/node_modules/playwright-core');
+(async () => {
+  const browser = await chromium.launch({ executablePath: '/opt/meta-chromium/chrome', args: ['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox','--disable-dev-shm-usage','--allow-file-access-from-files','--autoplay-policy=no-user-gesture-required','--proxy-server=http://127.0.0.1:3129','--ignore-certificate-errors','--hatch-webgl-allowed-domains-file=/home/hatch/workspace/defold/projects/bloom-bubbles/verify/webgl-policy-all.txt','--hatch-webgl-allowed-domains-sha256=8097045f0459c96c4cdc76e3a1af4e0f43f640b4b59c43d6db35e3641c0264c6'] });
+  const page = await browser.newPage({ viewport: { width: 720, height: 1280 } });
+  page.on('console', m => { const t = m.text(); if (!/doubleclick|googlesyndication|gamedistribution|browsingTopics|favicon|HeaderLift|Prebid|developer-event|consent|ad-system|opphb|noMinijuegos|Handler scope|Cross-Origin|404/.test(t)) console.log('CONSOLE', m.type(), ':', t.slice(0,200)); });
+  page.on('pageerror', e => { if (!e.message.includes('browsingTopics')) console.log('PAGEERROR:', String(e).slice(0,200)); });
+  await page.goto('file:///home/hatch/workspace/defold/projects/bloom-bubbles/verify/redirect.html', { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/localhost:8901/, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(9000);
+  const rect = await page.evaluate(() => { const c = document.querySelector('canvas'); const r = c.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height, iw: window.innerWidth, ih: window.innerHeight }; });
+  console.log('CANVAS RECT:', JSON.stringify(rect));
+  console.log('TITLE0:', await page.title());
+  await page.keyboard.press('a');
+  await page.waitForTimeout(800);
+  console.log('TITLE after A:', await page.title());
+  await page.mouse.click(360, 660);
+  await page.waitForTimeout(1200);
+  console.log('TITLE after PLAY click:', await page.title());
+  await page.mouse.click(360, 660);
+  await page.waitForTimeout(1200);
+  console.log('TITLE after 2nd PLAY click:', await page.title());
+  await browser.close();
+})().catch(e => { console.error('SCRIPT ERR', e.message); process.exit(1); });

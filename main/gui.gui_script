@@ -1,0 +1,1008 @@
+-- Bloom Bubbles: view layer. Owns every screen, the board rendering,
+-- input (mouse + touch + keyboard), animations, and mission tracking.
+-- The controller (game#game) owns save data, level flow, ads and music.
+local audio = require("main.audio")
+local board = require("main.board")
+local levels = require("main.levels")
+
+local W, H = 720, 1280
+local GAME = "game#game"
+local AIM_MAX = 1.30          -- radians from vertical
+local FLY_SPEED = 1500
+local ROW_EVERY = 6
+
+local C = {
+  white   = vmath.vector4(1, 1, 1, 1),
+  ink     = vmath.vector4(0.16, 0.22, 0.16, 1),
+  panel   = vmath.vector4(1, 0.99, 0.92, 1),
+  btn     = vmath.vector4(0.35, 0.65, 0.30, 1),
+  btn2    = vmath.vector4(0.95, 0.65, 0.20, 1),
+  btn_dim = vmath.vector4(0.55, 0.55, 0.55, 1),
+  dim     = vmath.vector4(0, 0, 0, 0.55),
+  danger  = vmath.vector4(0.9, 0.25, 0.25, 0.8),
+  gold    = vmath.vector4(1, 0.8, 0.25, 1),
+  clear   = vmath.vector4(1, 1, 1, 0),
+}
+
+local BUBBLE_COLOR = {
+  vmath.vector4(0.91, 0.29, 0.37, 1), -- red
+  vmath.vector4(0.96, 0.71, 0.16, 1), -- yellow
+  vmath.vector4(0.34, 0.75, 0.35, 1), -- green
+  vmath.vector4(0.27, 0.59, 0.94, 1), -- blue
+  vmath.vector4(0.65, 0.37, 0.82, 1), -- purple
+  vmath.vector4(0.94, 0.43, 0.73, 1), -- pink
+}
+
+-- ------------------------------------------------------------ node helpers --
+
+local function track(self, node, overlay)
+  if overlay then self.onodes[#self.onodes + 1] = node
+  else self.nodes[#self.nodes + 1] = node end
+  return node
+end
+
+local function new_box(self, overlay, parent, x, y, w, h, color)
+  local n = gui.new_box_node(vmath.vector3(x, y, 0), vmath.vector3(w, h, 0))
+  gui.set_pivot(n, gui.PIVOT_CENTER)
+  gui.set_color(n, color or C.white)
+  if parent then gui.set_parent(n, parent) else track(self, n, overlay) end
+  return n
+end
+
+local function new_img(self, overlay, parent, image, x, y, w, h)
+  local n = new_box(self, overlay, parent, x, y, w, h, C.white)
+  gui.set_texture(n, "atlas")
+  gui.play_flipbook(n, hash(image))
+  return n
+end
+
+local function new_text(self, overlay, parent, str, x, y, scale, color, wrap_w)
+  local n = gui.new_text_node(vmath.vector3(x, y, 0), str or "")
+  gui.set_font(n, "default")
+  gui.set_pivot(n, gui.PIVOT_CENTER)
+  gui.set_scale(n, vmath.vector3(scale or 1, scale or 1, 1))
+  gui.set_color(n, color or C.white)
+  if wrap_w then
+    gui.set_line_break(n, true)
+    gui.set_size(n, vmath.vector3(wrap_w, 4000, 0))
+  end
+  if parent then gui.set_parent(n, parent) else track(self, n, overlay) end
+  return n
+end
+
+local function pick(self, node, cb, overlay)
+  self.pick[#self.pick + 1] = { node = node, cb = cb, overlay = overlay }
+end
+
+local function button(self, overlay, parent, label, x, y, w, h, scale, cb, color)
+  local b = new_box(self, overlay, parent, x, y, w, h, color or C.btn)
+  local t = new_text(self, overlay, b, label, 0, 0, scale or 1.1, C.white)
+  pick(self, b, function()
+    audio.play("sfx_click")
+    cb()
+  end, overlay)
+  return b, t
+end
+
+local function obox(self, parent, x, y, w, h, color)
+  return new_box(self, true, parent, x, y, w, h, color)
+end
+
+local function otext(self, parent, str, x, y, scale, color, wrap_w)
+  return new_text(self, true, parent, str, x, y, scale, color, wrap_w)
+end
+
+local function oimg(self, parent, image, x, y, w, h)
+  return new_img(self, true, parent, image, x, y, w, h)
+end
+
+local function clear_all(self)
+  for _, n in ipairs(self.nodes) do pcall(gui.delete_node, n) end
+  for _, n in ipairs(self.onodes) do pcall(gui.delete_node, n) end
+  self.nodes, self.onodes, self.pick = {}, {}, {}
+  self.bnodes = {}
+  self.aim_dots = {}
+  self.particles = {}
+  self.fallers = {}
+  self.popups = {}
+  self.flying = nil
+  self.shooter = nil
+  self.loaded = nil
+  self.gen = (self.gen or 0) + 1
+end
+
+local function clear_overlay(self)
+  for _, n in ipairs(self.onodes) do pcall(gui.delete_node, n) end
+  self.onodes = {}
+  local keep = {}
+  for _, p in ipairs(self.pick) do
+    if not p.overlay then keep[#keep + 1] = p end
+  end
+  self.pick = keep
+  self.gen = (self.gen or 0) + 1
+end
+
+local function bg(self)
+  new_img(self, false, nil, "background", W / 2, H / 2, W, H)
+end
+
+local function panel(self, w, h)
+  obox(self, nil, 0, 0, W, H, C.dim)
+  local p = obox(self, nil, W / 2, H / 2, w, h, C.panel)
+  gui.set_scale(p, vmath.vector3(0.9, 0.9, 1))
+  gui.animate(p, gui.PROP_SCALE, vmath.vector3(1, 1, 1),
+    gui.EASING_OUTBACK, 0.25)
+  return p
+end
+
+-- ------------------------------------------------------------------ HUD --
+
+local function mission_progress(self)
+  local m = self.mission
+  if not m then return "" end
+  if m.type == "clear" then
+    return "Left: " .. board.count(self.board) .. " bubbles"
+  elseif m.type == "pop" then
+    local name = levels.COLOR_NAMES[m.color] or "?"
+    return name .. ": " .. (self.popped[m.color] or 0) .. " / " .. m.target
+  elseif m.type == "score" then
+    return "Score: " .. self.score .. " / " .. m.target
+  elseif m.type == "endless" then
+    return "Best: " .. (self.endless_best or 0)
+  end
+  return ""
+end
+
+local function update_hud(self)
+  if self.hud_score then
+    gui.set_text(self.hud_score, "Score  " .. self.score)
+  end
+  if self.hud_shots then
+    gui.set_text(self.hud_shots,
+      self.endless and "Shots  ∞" or ("Shots  " .. self.shots_left))
+  end
+  if self.hud_mission then
+    gui.set_text(self.hud_mission, mission_progress(self))
+  end
+end
+
+local function popup(self, x, y, str, color)
+  local n = new_text(self, false, nil, str, x, y, 1.1, color or C.gold)
+  gui.set_scale(n, vmath.vector3(0.6, 0.6, 1))
+  gui.animate(n, gui.PROP_SCALE, vmath.vector3(1.15, 1.15, 1),
+    gui.EASING_OUTBACK, 0.18)
+  self.popups[#self.popups + 1] = { node = n, life = 0.9 }
+end
+
+local function burst(self, x, y, color_idx, n)
+  local col = BUBBLE_COLOR[color_idx] or C.white
+  for i = 1, n or 6 do
+    local a = math.random() * math.pi * 2
+    local sp = 120 + math.random() * 260
+    local node = new_img(self, false, nil, "particle",
+      x, y, 18, 18)
+    gui.set_color(node, col)
+    self.particles[#self.particles + 1] = {
+      node = node, vx = math.cos(a) * sp, vy = math.sin(a) * sp, life = 0.55,
+    }
+  end
+end
+
+local function confetti(self)
+  for i = 1, 46 do
+    local ci = math.random(6)
+    local node = new_img(self, false, nil, "particle",
+      math.random(40, W - 40), H + 20, 20, 20)
+    gui.set_color(node, BUBBLE_COLOR[ci])
+    self.particles[#self.particles + 1] = {
+      node = node, vx = (math.random() - 0.5) * 120,
+      vy = -(140 + math.random() * 160), life = 1.6, confetti = true,
+    }
+  end
+end
+
+-- ---------------------------------------------------------------- screens --
+
+local function show_title(self, data)
+  self.screen = "title"
+  clear_all(self)
+  bg(self)
+  -- logo bubbles flanking the title
+  new_img(self, false, nil, "bubble_red", 130, 1010, 84, 84)
+  new_img(self, false, nil, "bubble_blue", 590, 1010, 84, 84)
+  new_img(self, false, nil, "bubble_green", 90, 880, 64, 64)
+  new_img(self, false, nil, "bubble_yellow", 630, 880, 64, 64)
+  new_text(self, false, nil, "Bloom", 362, 962, 3.4, C.ink)
+  new_text(self, false, nil, "Bloom", 360, 966, 3.4, C.white)
+  new_text(self, false, nil, "BUBBLES", 360, 872, 2.2, C.btn)
+  new_text(self, false, nil, "A garden bubble shooter",
+    360, 800, 1.0, C.ink)
+  local play = button(self, false, nil, "PLAY", 360, 660, 320, 96, 1.6,
+    function() msg.post(GAME, "ui_play", {}) end, C.btn)
+  gui.animate(play, gui.PROP_SCALE, vmath.vector3(1.06, 1.06, 1),
+    gui.EASING_INOUTSINE, 0.7, 0, nil, gui.PLAYBACK_LOOP_PINGPONG)
+  button(self, false, nil, "LEVELS", 360, 540, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_levels", {}) end, C.btn2)
+  button(self, false, nil, "ENDLESS", 360, 450, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_endless", {}) end, C.btn2)
+  button(self, false, nil, "HOW TO PLAY", 360, 360, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_howto", {}) end)
+  if data.endless_best and data.endless_best > 0 then
+    new_text(self, false, nil, "Endless best: " .. data.endless_best,
+      360, 280, 1.0, C.ink)
+  end
+  new_text(self, false, nil, "An original game by ORQA",
+    360, 60, 0.8, C.ink)
+  self.mute_btn, self.mute_label = button(self, false, nil,
+    (self.muted and "SOUND OFF" or "SOUND ON"), 620, 1230, 150, 54, 0.85,
+    function() msg.post(GAME, "ui_mute", {}) end)
+end
+
+local function show_levels(self, data)
+  self.screen = "levels"
+  clear_all(self)
+  bg(self)
+  new_text(self, false, nil, "Pick a Level", 360, 1180, 2.0, C.ink)
+  local unlocked = data.unlocked or 1
+  for i = 1, #levels.LEVELS do
+    local col = (i - 1) % 4
+    local row = math.floor((i - 1) / 4)
+    local x = 120 + col * 160
+    local y = 1010 - row * 190
+    local locked = i > unlocked
+    local b = new_box(self, false, nil, x, y, 132, 132,
+      locked and C.btn_dim or C.btn)
+    new_text(self, false, b, tostring(i), 0, 18, 1.8, C.white)
+    if locked then
+      new_img(self, false, b, "lock", 0, -38, 40, 50)
+    else
+      local stars = (data.stars and data.stars[i]) or 0
+      for s = 1, 3 do
+        local st = new_img(self, false, b, "star",
+          (s - 2) * 34, -42, 30, 30)
+        if s > stars then
+          gui.set_color(st, vmath.vector4(0.6, 0.6, 0.6, 0.7))
+        end
+      end
+      pick(self, b, function()
+        audio.play("sfx_click")
+        msg.post(GAME, "ui_pick_level", { level = i })
+      end)
+    end
+  end
+  button(self, false, nil, "BACK", 360, 130, 220, 72, 1.2,
+    function() msg.post(GAME, "ui_quit", {}) end)
+end
+
+local function board_node(self, row, col, color)
+  local x, y = board.cell_pos(row, col)
+  local n = new_img(self, false, nil,
+    "bubble_" .. levels.COLOR_NAMES[color], x, y, 60, 60)
+  gui.set_scale(n, vmath.vector3(0.2, 0.2, 1))
+  gui.animate(n, gui.PROP_SCALE, vmath.vector3(1, 1, 1),
+    gui.EASING_OUTBACK, 0.22)
+  self.bnodes[row .. "," .. col] = n
+  return n
+end
+
+local function build_board_nodes(self)
+  for r = 1, self.board.rows do
+    for c = 1, board.COLS do
+      local col = board.get(self.board, r, c)
+      if col then board_node(self, r, c, col) end
+    end
+  end
+end
+
+local function refresh_loaded(self)
+  if not self.loaded then return end
+  gui.play_flipbook(self.loaded,
+    hash("bubble_" .. levels.COLOR_NAMES[self.current_color]))
+  local dx, dy = math.sin(self.aim), math.cos(self.aim)
+  gui.set_position(self.loaded, vmath.vector3(
+    board.SHOOT_X + dx * 46, board.SHOOT_Y + dy * 46, 0))
+  if self.next_node then
+    gui.play_flipbook(self.next_node,
+      hash("bubble_" .. levels.COLOR_NAMES[self.next_color]))
+  end
+end
+
+local function update_aim_dots(self)
+  if not self.aim_dots or #self.aim_dots == 0 then return end
+  local dx, dy = math.sin(self.aim), math.cos(self.aim)
+  local px, py = board.SHOOT_X, board.SHOOT_Y
+  local show = self.screen == "play" and not self.flying and not self.over
+  for i = 1, #self.aim_dots do
+    if not show then
+      gui.set_color(self.aim_dots[i], C.clear)
+    else
+      px, py = px + dx * 62, py + dy * 62
+      if px < board.R then
+        px = board.R
+        dx = -dx
+      end
+      if px > W - board.R then
+        px = W - board.R
+        dx = -dx
+      end
+      if py > board.TOP_Y - 6 or board.would_stick(self.board, px, py) then
+        gui.set_color(self.aim_dots[i], C.clear)
+        for j = i + 1, #self.aim_dots do
+          gui.set_color(self.aim_dots[j], C.clear)
+        end
+        break
+      end
+      gui.set_position(self.aim_dots[i], vmath.vector3(px, py, 0))
+      gui.set_color(self.aim_dots[i],
+        vmath.vector4(1, 1, 1, 0.85 - i * 0.07))
+    end
+  end
+  if self.shooter then
+    gui.set_rotation(self.shooter,
+      vmath.quat_rotation_z(-self.aim))
+  end
+  refresh_loaded(self)
+end
+
+local function show_play(self, data)
+  self.screen = "play"
+  self.level = data.level or 1
+  self.endless = data.endless or false
+  self.def = data.def
+  self.mission = data.def.mission
+  self.shots_left = data.def.shots or 0
+  self.total_shots = data.def.shots or 0
+  self.score = 0
+  self.combo = 0
+  self.popped = {}
+  self.shots_since_row = 0
+  self.over = false
+  self.end_pending = nil
+  self.end_timer = 0
+  self.ai_timer = 1.0
+  self.paused = false
+  self.aiming = false
+  self.aim = 0
+  clear_all(self)
+  bg(self)
+  -- danger line
+  new_box(self, false, nil, W / 2, board.DANGER_Y, W, 4, C.danger)
+  new_text(self, false, nil, "DANGER LINE", 110, board.DANGER_Y + 22,
+    0.7, C.danger)
+  -- HUD
+  self.hud_score = new_text(self, false, nil, "Score  0", 108, 1245, 1.0,
+    C.ink)
+  new_text(self, false, nil, self.mission.text, 360, 1245, 0.95, C.ink, 330)
+  self.hud_mission = new_text(self, false, nil, "", 360, 1208, 0.9, C.ink)
+  self.hud_shots = new_text(self, false, nil, "", 596, 1245, 1.0, C.ink)
+  local pause_b = button(self, false, nil, "II", 682, 1245, 52, 52, 1.1,
+    function() msg.post(GAME, "ui_pause", {}) end, C.btn2)
+  -- board
+  local seed = self.endless and 4242 or (self.level * 7919 + 13)
+  self.board = board.new(data.def.rows, data.def.colors, seed)
+  build_board_nodes(self)
+  -- shooter + loaded bubble + next preview
+  self.shooter = new_img(self, false, nil, "shooter",
+    board.SHOOT_X, board.SHOOT_Y, 150, 150)
+  self.current_color = math.random(data.def.colors)
+  self.next_color = math.random(data.def.colors)
+  self.loaded = new_img(self, false, nil,
+    "bubble_" .. levels.COLOR_NAMES[self.current_color],
+    board.SHOOT_X, board.SHOOT_Y + 46, 56, 56)
+  new_text(self, false, nil, "NEXT", 566, 218, 0.8, C.ink)
+  self.next_node = new_img(self, false, nil,
+    "bubble_" .. levels.COLOR_NAMES[self.next_color], 566, 168, 46, 46)
+  -- aim dots
+  for i = 1, 8 do
+    self.aim_dots[i] = new_img(self, false, nil, "aimdot", -100, -100, 20, 20)
+    gui.set_color(self.aim_dots[i], C.clear)
+  end
+  update_hud(self)
+  update_aim_dots(self)
+  -- mission banner
+  local bb = obox(self, nil, W / 2, H / 2 + 60, 620, 110, C.panel)
+  gui.set_scale(bb, vmath.vector3(0.9, 0.9, 1))
+  gui.animate(bb, gui.PROP_SCALE, vmath.vector3(1, 1, 1),
+    gui.EASING_OUTBACK, 0.25)
+  otext(self, bb, "MISSION: " .. self.mission.text, 0, 0, 1.3,
+    C.ink, 560)
+  self.banner_timer = 1.6
+  self.banner_active = true
+end
+
+-- --------------------------------------------------------------- overlays --
+
+local function show_pause(self)
+  self.paused = true
+  clear_overlay(self)
+  local p = panel(self, 460, 460)
+  otext(self, p, "PAUSED", 0, 170, 2.0, C.ink)
+  button(self, true, p, "RESUME", 0, 80, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_resume", {}) end)
+  button(self, true, p, "RESTART", 0, -10, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_retry", {}) end, C.btn2)
+  button(self, true, p, "SOUND: " .. (self.muted and "OFF" or "ON"),
+    0, -100, 320, 72, 1.2,
+    function() msg.post(GAME, "ui_mute", {}) end, C.btn2)
+  button(self, true, p, "QUIT TO TITLE", 0, -180, 320, 64, 1.1,
+    function() msg.post(GAME, "ui_quit", {}) end)
+end
+
+local function show_win(self, data)
+  self.screen = "win"
+  clear_overlay(self)
+  confetti(self)
+  audio.play("sfx_mission")
+  local p = panel(self, 520, 600)
+  otext(self, p, "LEVEL COMPLETE!", 0, 230, 1.7, C.btn)
+  otext(self, p, "Mission complete!", 0, 180, 1.1, C.ink)
+  for s = 1, 3 do
+    local st = oimg(self, p, "star", (s - 2) * 90, 100, 72, 72)
+    gui.set_scale(st, vmath.vector3(0.2, 0.2, 1))
+    if s <= (data.stars or 1) then
+      gui.animate(st, gui.PROP_SCALE, vmath.vector3(1, 1, 1),
+        gui.EASING_OUTBACK, 0.35, 0.15 + s * 0.18)
+    else
+      gui.set_color(st, vmath.vector4(0.6, 0.6, 0.6, 0.7))
+      gui.animate(st, gui.PROP_SCALE, vmath.vector3(1, 1, 1),
+        gui.EASING_OUTBACK, 0.35, 0.15 + s * 0.18)
+    end
+  end
+  otext(self, p, "Score  " .. (data.score or 0), 0, 10, 1.3, C.ink)
+  local y = -80
+  if data.has_next then
+    button(self, true, p, "NEXT LEVEL", 0, y, 340, 76, 1.3,
+      function() msg.post(GAME, "ui_next", {}) end)
+    y = y - 85
+  end
+  button(self, true, p, "REPLAY", 0, y, 340, 72, 1.2,
+    function() msg.post(GAME, "ui_retry", {}) end, C.btn2)
+  button(self, true, p, "LEVELS", 0, y - 85, 340, 72, 1.2,
+    function() msg.post(GAME, "ui_levels", {}) end, C.btn2)
+end
+
+local function show_lose(self, data)
+  self.screen = "lose"
+  clear_overlay(self)
+  local p = panel(self, 520, 460)
+  otext(self, p, "GAME OVER", 0, 170, 1.9, C.danger)
+  if data.endless then
+    otext(self, p, "The garden overflowed!", 0, 115, 1.1, C.ink)
+    otext(self, p, "Score  " .. (data.score or 0), 0, 55, 1.3, C.ink)
+    otext(self, p, "Best  " .. (data.best or 0), 0, 5, 1.1, C.ink)
+  else
+    otext(self, p, "Out of shots - try again!", 0, 115, 1.1, C.ink)
+    otext(self, p, "Score  " .. (data.score or 0), 0, 55, 1.3, C.ink)
+  end
+  button(self, true, p, "TRY AGAIN", 0, -70, 340, 76, 1.3,
+    function() msg.post(GAME, "ui_retry", {}) end)
+  button(self, true, p, "LEVELS", 0, -160, 340, 72, 1.2,
+    function() msg.post(GAME, "ui_levels", {}) end, C.btn2)
+end
+
+local function show_howto(self)
+  clear_overlay(self)
+  local p = panel(self, 600, 640)
+  otext(self, p, "HOW TO PLAY", 0, 260, 1.8, C.ink)
+  otext(self, p,
+    "Aim with your mouse or finger, then tap or release to shoot.\n\n" ..
+    "Match 3 or more bubbles of the same colour to pop them.\n\n" ..
+    "Bubbles left hanging with nothing above them fall away.\n\n" ..
+    "A new row drops in every few shots. Do not let any bubble cross the red DANGER LINE!\n\n" ..
+    "Finish the mission before you run out of shots.\n\n" ..
+    "Arrow keys aim, Space shoots, P pauses.",
+    0, -30, 1.05, C.ink, 520)
+  button(self, true, p, "GOT IT", 0, -260, 300, 72, 1.2,
+    function() clear_overlay(self) end)
+end
+
+-- ---------------------------------------------------------------- shooting --
+
+local function aim_from_point(self, x, y)
+  local dx, dy = x - board.SHOOT_X, y - board.SHOOT_Y
+  if dy < 12 then dy = 12 end
+  self.aim = math.max(-AIM_MAX, math.min(AIM_MAX, math.atan2(dx, dy)))
+  update_aim_dots(self)
+end
+
+local function next_bubble_color(self)
+  local present = board.colors_present(self.board)
+  local choices = {}
+  for c = 1, self.def.colors do
+    if present[c] then choices[#choices + 1] = c end
+  end
+  if #choices == 0 then return math.random(self.def.colors) end
+  return choices[math.random(#choices)]
+end
+
+local function fire(self)
+  if self.screen ~= "play" or self.paused or self.over or self.flying then
+    return
+  end
+  if not self.endless then
+    if self.shots_left <= 0 then return end
+    self.shots_left = self.shots_left - 1
+    self.shots_since_row = self.shots_since_row + 1
+  else
+    self.shots_since_row = self.shots_since_row + 1
+  end
+  local dx, dy = math.sin(self.aim), math.cos(self.aim)
+  local sx = board.SHOOT_X + dx * 46
+  local sy = board.SHOOT_Y + dy * 46
+  local node = new_img(self, false, nil,
+    "bubble_" .. levels.COLOR_NAMES[self.current_color], sx, sy, 56, 56)
+  self.flying = { node = node, x = sx, y = sy, dx = dx, dy = dy,
+                  color = self.current_color }
+  audio.play("sfx_shoot")
+  if self.shooter then
+    gui.animate(self.shooter, gui.PROP_SCALE, vmath.vector3(0.85, 0.85, 1),
+      gui.EASING_OUT, 0.07, 0, function()
+        if self.shooter then
+          gui.animate(self.shooter, gui.PROP_SCALE,
+            vmath.vector3(1, 1, 1), gui.EASING_OUTBACK, 0.2)
+        end
+      end)
+  end
+  self.current_color = self.next_color
+  self.next_color = next_bubble_color(self)
+  refresh_loaded(self)
+  update_hud(self)
+end
+
+local function pop_node(self, row, col, color)
+  local key = row .. "," .. col
+  local node = self.bnodes[key]
+  self.bnodes[key] = nil
+  if node then
+    local x, y = board.cell_pos(row, col)
+    burst(self, x, y, color, 6)
+    gui.animate(node, gui.PROP_SCALE, vmath.vector3(1.5, 1.5, 1),
+      gui.EASING_OUT, 0.12, 0, function()
+        pcall(gui.delete_node, node)
+      end)
+  end
+end
+
+local function check_end(self)
+  if self.over then return end
+  local m = self.mission
+  local won = false
+  if m.type == "clear" then
+    won = board.count(self.board) == 0
+  elseif m.type == "pop" then
+    won = (self.popped[m.color] or 0) >= m.target
+  elseif m.type == "score" then
+    won = self.score >= m.target
+  end
+  if won then
+    self.over = true
+    self.end_pending = "win"
+    self.end_timer = 1.1
+    confetti(self)
+    audio.play("sfx_mission")
+    return
+  end
+  local lost = false
+  if not self.endless and self.shots_left <= 0 then lost = true end
+  local low = board.lowest_y(self.board)
+  if low and low < board.DANGER_Y then lost = true end
+  if lost then
+    self.over = true
+    self.end_pending = "lose"
+    self.end_timer = 0.9
+  end
+end
+
+local function maybe_add_row(self)
+  if self.over then return end
+  local every = self.endless and levels.ROW_EVERY_ENDLESS or ROW_EVERY
+  if self.shots_since_row < every then return end
+  if not self.endless and board.count(self.board) <= 12 then
+    self.shots_since_row = 0
+    return
+  end
+  self.shots_since_row = 0
+  -- re-key existing nodes: every old row r moves to r+1
+  local old = self.bnodes
+  self.bnodes = {}
+  for key, node in pairs(old) do
+    local r, c = key:match("^(%d+),(%d+)$")
+    r, c = tonumber(r), tonumber(c)
+    local x, y = board.cell_pos(r + 1, c)
+    self.bnodes[(r + 1) .. "," .. c] = node
+    gui.animate(node, gui.PROP_POSITION, vmath.vector3(x, y, 0),
+      gui.EASING_OUT, 0.3)
+  end
+  local cells = board.add_row(self.board, self.def.colors)
+  for _, cell in ipairs(cells) do
+    local r, c, color = cell[1], cell[2], cell[3]
+    local x, y = board.cell_pos(r, c)
+    local n = new_img(self, false, nil,
+      "bubble_" .. levels.COLOR_NAMES[color], x, y + board.DY * 2, 60, 60)
+    self.bnodes[r .. "," .. c] = n
+    gui.animate(n, gui.PROP_POSITION, vmath.vector3(x, y, 0),
+      gui.EASING_OUTBOUNCE, 0.4)
+  end
+  audio.play("sfx_row")
+  update_hud(self)
+  check_end(self)
+end
+
+local function resolve_stick(self)
+  local f = self.flying
+  if not f then return end
+  self.flying = nil
+  pcall(gui.delete_node, f.node)
+  local row, col = board.snap_cell(self.board, f.x, f.y)
+  if not row then
+    check_end(self)
+    return
+  end
+  self.board.grid[row] = self.board.grid[row] or {}
+  self.board.grid[row][col] = f.color
+  if row > self.board.rows then self.board.rows = row end
+  board_node(self, row, col, f.color)
+  local cluster = board.cluster(self.board, row, col)
+  if #cluster >= 3 then
+    self.combo = self.combo + 1
+    local pts = 10 * #cluster + 50 * (self.combo - 1)
+    self.score = self.score + pts
+    self.popped[f.color] = (self.popped[f.color] or 0) + #cluster
+    local sx, sy, n = 0, 0, 0
+    for _, cell in ipairs(cluster) do
+      local r, c = cell[1], cell[2]
+      local color = board.get(self.board, r, c)
+      self.board.grid[r][c] = nil
+      pop_node(self, r, c, color)
+      local x, y = board.cell_pos(r, c)
+      sx, sy, n = sx + x, sy + y, n + 1
+    end
+    popup(self, sx / n, sy / n, "+" .. pts,
+      self.combo > 1 and C.gold or C.white)
+    if self.combo > 1 then
+      popup(self, sx / n, sy / n + 46, "COMBO x" .. self.combo, C.gold)
+    end
+    pcall(sound.play, "/audio#sfx_pop",
+      { speed = 1 + 0.07 * math.min(self.combo, 6) })
+    -- floating clusters fall
+    local floating = board.floating(self.board)
+    if #floating > 0 then
+      audio.play("sfx_fall")
+      for _, cell in ipairs(floating) do
+        local r, c = cell[1], cell[2]
+        self.board.grid[r][c] = nil
+        local key = r .. "," .. c
+        local node = self.bnodes[key]
+        self.bnodes[key] = nil
+        if node then
+          self.fallers[#self.fallers + 1] = {
+            node = node, vy = -40, vx = (math.random() - 0.5) * 60,
+          }
+        end
+        self.score = self.score + 20
+      end
+      popup(self, W / 2, 700, "+" .. 20 * #floating .. " falling bonus",
+        C.white)
+    end
+  else
+    self.combo = 0
+  end
+  update_hud(self)
+  update_aim_dots(self)
+  check_end(self)
+  if not self.over then maybe_add_row(self) end
+end
+
+local function stars_for(self)
+  if self.total_shots <= 0 then return 1 end
+  local frac = self.shots_left / self.total_shots
+  if frac >= 0.40 then return 3 end
+  if frac >= 0.15 then return 2 end
+  return 1
+end
+
+-- ------------------------------------------------------------------ input --
+
+function on_input(self, action_id, action)
+  if action_id == hash("touch") then
+    if action.pressed then
+      for _, p in ipairs(self.pick) do
+        if gui.pick_node(p.node, action.x, action.y) then
+          p.cb()
+          return
+        end
+      end
+      if self.screen == "play" and not self.paused and not self.over then
+        self.aiming = true
+        aim_from_point(self, action.x, action.y)
+      end
+    elseif action.released then
+      if self.aiming then
+        self.aiming = false
+        aim_from_point(self, action.x, action.y)
+        fire(self)
+      end
+    else
+      -- mouse hover / touch drag: track the aim
+      if self.screen == "play" and not self.paused and not self.over then
+        aim_from_point(self, action.x, action.y)
+      end
+    end
+  elseif action_id == hash("aim_left") then
+    if action.pressed or action.repeated then
+      self.aim = math.max(-AIM_MAX, (self.aim or 0) - 0.06)
+      update_aim_dots(self)
+    end
+  elseif action_id == hash("aim_right") then
+    if action.pressed or action.repeated then
+      self.aim = math.min(AIM_MAX, (self.aim or 0) + 0.06)
+      update_aim_dots(self)
+    end
+  elseif action_id == hash("fire") then
+    if action.pressed then fire(self) end
+  elseif action_id == hash("autoplay") then
+    if action.pressed then
+      self.autoplay = not self.autoplay
+      print("autoplay", self.autoplay)
+    end
+  elseif action_id == hash("pause_key") then
+    if action.pressed then
+      if self.user_paused then
+        msg.post(GAME, "ui_resume", {})
+      elseif self.screen == "play" then
+        msg.post(GAME, "ui_pause", {})
+      end
+    end
+  end
+end
+
+-- ----------------------------------------------------------------- update --
+
+local function report_state(self)
+  if html5 then
+    local bubbles = self.board and board.count(self.board) or 0
+    pcall(html5.run, "document.title='BLOOM|screen=" .. self.screen ..
+      "|score=" .. (self.score or 0) ..
+      "|bubbles=" .. bubbles ..
+      "|shots=" .. (self.shots_left or 0) ..
+      "|level=" .. (self.level or 0) ..
+      "|endless=" .. (self.endless and 1 or 0) ..
+      "|auto=" .. (self.autoplay and 1 or 0) ..
+      "|paused=" .. (self.paused and 1 or 0) .. "'")
+  end
+end
+
+function update(self, dt)
+  self.report_t = (self.report_t or 0) + dt
+  if self.report_t > 0.5 then
+    self.report_t = 0
+    report_state(self)
+  end
+  if self.banner_active and self.banner_timer then
+    self.banner_timer = self.banner_timer - dt
+    if self.banner_timer <= 0 then
+      self.banner_active = false
+      self.banner_timer = nil
+      if self.screen == "play" and not self.paused then
+        clear_overlay(self)
+      end
+    end
+  end
+  if self.paused then return end
+  -- particles
+  for i = #self.particles, 1, -1 do
+    local p = self.particles[i]
+    p.life = p.life - dt
+    if p.life <= 0 then
+      pcall(gui.delete_node, p.node)
+      table.remove(self.particles, i)
+    else
+      local pos = gui.get_position(p.node)
+      if p.confetti then
+        p.vy = p.vy - 60 * dt
+        pos.x = pos.x + p.vx * dt + math.sin(p.life * 9) * 30 * dt
+      else
+        p.vy = p.vy - 900 * dt
+        pos.x = pos.x + p.vx * dt
+      end
+      pos.y = pos.y + p.vy * dt
+      gui.set_position(p.node, pos)
+      local c = gui.get_color(p.node)
+      c.w = math.max(0, math.min(1, p.life / 0.5))
+      gui.set_color(p.node, c)
+    end
+  end
+  -- falling bubbles
+  for i = #self.fallers, 1, -1 do
+    local f = self.fallers[i]
+    f.vy = f.vy - 2600 * dt
+    local pos = gui.get_position(f.node)
+    pos.y = pos.y + f.vy * dt
+    pos.x = pos.x + f.vx * dt
+    gui.set_position(f.node, pos)
+    if pos.y < 420 then
+      local c = gui.get_color(f.node)
+      c.w = math.max(0, (pos.y - 60) / 360)
+      gui.set_color(f.node, c)
+    end
+    if pos.y < -60 then
+      pcall(gui.delete_node, f.node)
+      table.remove(self.fallers, i)
+    end
+  end
+  -- score popups
+  for i = #self.popups, 1, -1 do
+    local p = self.popups[i]
+    p.life = p.life - dt
+    if p.life <= 0 then
+      pcall(gui.delete_node, p.node)
+      table.remove(self.popups, i)
+    else
+      local pos = gui.get_position(p.node)
+      pos.y = pos.y + 42 * dt
+      gui.set_position(p.node, pos)
+      local c = gui.get_color(p.node)
+      c.w = math.max(0, p.life / 0.9)
+      gui.set_color(p.node, c)
+    end
+  end
+  if self.screen ~= "play" then return end
+  -- flying bubble
+  if self.flying then
+    local f = self.flying
+    f.x = f.x + f.dx * FLY_SPEED * dt
+    f.y = f.y + f.dy * FLY_SPEED * dt
+    if f.x < board.R then
+      f.x = board.R
+      f.dx = -f.dx
+      audio.play("sfx_bounce")
+    elseif f.x > W - board.R then
+      f.x = W - board.R
+      f.dx = -f.dx
+      audio.play("sfx_bounce")
+    end
+    gui.set_position(f.node, vmath.vector3(f.x, f.y, 0))
+    if board.would_stick(self.board, f.x, f.y) or f.y > board.TOP_Y + 80 then
+      resolve_stick(self)
+    end
+  end
+  -- win/lose delay, then hand over to the controller
+  if self.end_pending then
+    self.end_timer = self.end_timer - dt
+    if self.end_timer <= 0 then
+      local pending = self.end_pending
+      self.end_pending = nil
+      if pending == "win" then
+        msg.post(GAME, "ui_level_won",
+          { score = self.score, stars = stars_for(self) })
+      else
+        msg.post(GAME, "ui_level_lost", { score = self.score })
+      end
+    end
+  end
+  -- autoplay (verification aid; also handy for demos)
+  -- Simulates candidate aim angles, scores each landing by the match it
+  -- makes (and the bubbles it drops), and fires the best one.
+  if self.autoplay and not self.over and not self.flying then
+    self.ai_timer = (self.ai_timer or 0) - dt
+    if self.ai_timer <= 0 then
+      self.ai_timer = 0.9
+      local best_aim, best_score = 0, -1
+      local a = -AIM_MAX
+      while a <= AIM_MAX + 0.0001 do
+        local dx, dy = math.sin(a), math.cos(a)
+        -- simulate the flight, mirroring update()'s bounce/stick rules
+        local x, y = board.SHOOT_X + dx * 46, board.SHOOT_Y + dy * 46
+        local vx, vy = dx, dy
+        local landed = false
+        for _ = 1, 400 do
+          x = x + vx * 8
+          y = y + vy * 8
+          if x < board.R then x = board.R; vx = -vx
+          elseif x > W - board.R then x = W - board.R; vx = -vx end
+          if board.would_stick(self.board, x, y) or y > board.TOP_Y + 80 then
+            landed = true
+            break
+          end
+        end
+        if landed then
+          local row, col = board.snap_cell(self.board, x, y)
+          if row and col and not board.get(self.board, row, col) then
+            -- hypothetically place the bubble and score the outcome
+            self.board.grid[row] = self.board.grid[row] or {}
+            self.board.grid[row][col] = self.current_color
+            local cluster = board.cluster(self.board, row, col)
+            local score
+            if #cluster >= 3 then
+              for _, cell in ipairs(cluster) do
+                self.board.grid[cell[1]][cell[2]] = nil
+              end
+              local drops = #board.floating(self.board)
+              score = #cluster * 10 + drops * 15 + row * 0.3
+              for _, cell in ipairs(cluster) do
+                self.board.grid[cell[1]][cell[2]] = self.current_color
+              end
+            else
+              -- setup shot: grow a same-colour group for next time
+              score = #cluster * 2 + row * 0.05
+            end
+            self.board.grid[row][col] = nil
+            if score > best_score + 0.001 or
+               (math.abs(score - best_score) < 0.001 and
+                math.abs(a) < math.abs(best_aim)) then
+              best_score, best_aim = score, a
+            end
+          end
+        end
+        a = a + 0.03
+      end
+      self.aim = best_aim
+      update_aim_dots(self)
+      fire(self)
+    end
+  end
+end
+
+-- --------------------------------------------------------------- messages --
+
+function on_message(self, message_id, message, sender)
+  if message_id == hash("show_title") then
+    self.muted = message.muted or false
+    self.endless_best = message.endless_best or 0
+    show_title(self, message)
+  elseif message_id == hash("show_levels") then
+    self.muted = message.muted or false
+    show_levels(self, message)
+  elseif message_id == hash("show_play") then
+    self.muted = message.muted or false
+    show_play(self, message)
+  elseif message_id == hash("show_win") then
+    show_win(self, message)
+  elseif message_id == hash("show_lose") then
+    show_lose(self, message)
+  elseif message_id == hash("show_howto") then
+    show_howto(self)
+  elseif message_id == hash("show_pause") then
+    self.user_paused = true
+    self.banner_active = false
+    show_pause(self)
+  elseif message_id == hash("hide_pause") then
+    self.user_paused = false
+    self.paused = false
+    clear_overlay(self)
+  elseif message_id == hash("gd_pause") then
+    self.paused = true
+  elseif message_id == hash("gd_resume") then
+    self.paused = self.user_paused or false
+  elseif message_id == hash("set_mute") then
+    self.muted = message.muted
+    if self.mute_label then
+      gui.set_text(self.mute_label,
+        self.muted and "SOUND OFF" or "SOUND ON")
+    end
+  end
+end
+
+-- -------------------------------------------------------------------- init --
+
+function init(self)
+  msg.post(".", "acquire_input_focus")
+  self.nodes = {}
+  self.onodes = {}
+  self.pick = {}
+  self.bnodes = {}
+  self.aim_dots = {}
+  self.particles = {}
+  self.fallers = {}
+  self.popups = {}
+  self.screen = "title"
+  self.muted = false
+  self.autoplay = false
+  self.paused = false
+  self.user_paused = false
+  self.over = false
+  self.score = 0
+  self.aim = 0
+  self.report_t = 0
+  self.ai_timer = 1.0
+end
