@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-22T22:08:50.624Z",
+  "via": "U debug unlock + level select + autoplay bot",
+  "spotCheck": [
+    {
+      "level": 4,
+      "won": false,
+      "attempts": 3,
+      "score": 3630,
+      "shotsLeft": 0,
+      "bubblesLeft": 10
+    },
+    {
+      "level": 6,
+      "won": false,
+      "attempts": 3,
+      "score": 2500,
+      "shotsLeft": 0,
+      "bubblesLeft": 46
+    },
+    {
+      "level": 7,
+      "won": false,
+      "attempts": 3,
+      "score": 1130,
+      "shotsLeft": 0,
+      "bubblesLeft": 75
+    },
+    {
+      "level": 9,
+      "won": false,
+      "attempts": 3,
+      "score": 3090,
+      "shotsLeft": 0,
+      "bubblesLeft": 32
+    },
+    {
+      "level": 10,
+      "won": false,
+      "attempts": 3,
+      "score": 2030,
+      "shotsLeft": 0,
+      "bubblesLeft": 44
+    },
+    {
+      "level": 12,
+      "won": false,
+      "attempts": 3,
+      "score": 2180,
+      "shotsLeft": 0,
+      "bubblesLeft": 51
+    },
+    {
+      "level": 13,
+      "won": false,
+      "attempts": 3,
+      "score": 3560,
+      "shotsLeft": 0,
+      "bubblesLeft": 42
+    },
+    {
+      "level": 15,
+      "won": false,
+      "attempts": 3,
+      "score": 1730,
+      "shotsLeft": 0,
+      "bubblesLeft": 68
+    },
+    {
+      "level": 16,
+      "won": false,
+      "attempts": 3,
+      "score": 1510,
+      "shotsLeft": 0,
+      "bubblesLeft": 64
+    },
+    {
+      "level": 18,
+      "won": false,
+      "attempts": 3,
+      "score": 2790,
+      "shotsLeft": 0,
+      "bubblesLeft": 46
+    },
+    {
+      "level": 20,
+      "won": false,
+      "attempts": 3,
+      "score": 2380,
+      "shotsLeft": 0,
+      "bubblesLeft": 62
+    }
+  ]
+}

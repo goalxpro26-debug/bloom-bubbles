@@ -1,0 +1,29 @@
+=== spot-check level 20 ===
+level 20 started, bot auto=1 bubbles=70 shots=38
+--- level 20 attempt 1/3 ---
+  ... waiting level 20 finishes 0s last={"screen":"play","score":"0","bubbles":"70","shots":"38","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 21s last={"screen":"play","score":"130","bubbles":"75","shots":"31","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 41s last={"screen":"play","score":"660","bubbles":"71","shots":"24","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 62s last={"screen":"play","score":"940","bubbles":"67","shots":"17","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 83s last={"screen":"play","score":"1160","bubbles":"73","shots":"10","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 103s last={"screen":"play","score":"2290","bubbles":"57","shots":"2","level":"20","endless":"0","auto":"1","paused":"0"}
+level 20 LOST (score=2380 bubbles=62), retrying via TRY AGAIN
+--- level 20 attempt 2/3 ---
+  ... waiting level 20 finishes 0s last={"screen":"play","score":"0","bubbles":"71","shots":"37","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 21s last={"screen":"play","score":"210","bubbles":"73","shots":"30","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 41s last={"screen":"play","score":"790","bubbles":"64","shots":"23","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 62s last={"screen":"play","score":"1340","bubbles":"58","shots":"16","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 82s last={"screen":"play","score":"2040","bubbles":"57","shots":"9","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 103s last={"screen":"play","score":"2130","bubbles":"65","shots":"2","level":"20","endless":"0","auto":"1","paused":"0"}
+level 20 LOST (score=2130 bubbles=78), retrying via TRY AGAIN
+--- level 20 attempt 3/3 ---
+  ... waiting level 20 finishes 0s last={"screen":"play","score":"0","bubbles":"70","shots":"37","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 21s last={"screen":"play","score":"210","bubbles":"73","shots":"30","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 41s last={"screen":"play","score":"790","bubbles":"64","shots":"23","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 62s last={"screen":"play","score":"1020","bubbles":"65","shots":"16","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 82s last={"screen":"play","score":"1190","bubbles":"71","shots":"8","level":"20","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 20 finishes 103s last={"screen":"play","score":"1830","bubbles":"69","shots":"2","level":"20","endless":"0","auto":"1","paused":"0"}
+level 20 LOST (score=1860 bubbles=68), retrying via TRY AGAIN
+LEVEL 20: LOSE score=1860 shots=0 bubbles=68
+merged spotCheck into results-levels.json
+spot-check: [{"level":20,"won":false,"attempts":3,"score":1860,"shotsLeft":0,"bubblesLeft":68}]

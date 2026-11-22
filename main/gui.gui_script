@@ -745,6 +745,13 @@ function on_input(self, action_id, action)
       self.autoplay = not self.autoplay
       print("autoplay", self.autoplay)
     end
+  elseif action_id == hash("debug_unlock") then
+    -- QA aid only (not a player feature): on the title screen, U unlocks
+    -- every level in memory so later levels can be spot-checked without
+    -- beating the earlier ones. Session-only: never persisted.
+    if action.pressed and self.screen == "title" then
+      msg.post(GAME, "ui_debug_unlock", {})
+    end
   elseif action_id == hash("pause_key") then
     if action.pressed then
       if self.user_paused then
@@ -887,7 +894,7 @@ function update(self, dt)
     self.ai_timer = (self.ai_timer or 0) - dt
     if self.ai_timer <= 0 then
       self.ai_timer = 0.9
-      local best_aim, best_score = 0, -1
+      local best_aim, best_score = 0, -1e9
       local a = -AIM_MAX
       while a <= AIM_MAX + 0.0001 do
         local dx, dy = math.sin(a), math.cos(a)
@@ -909,6 +916,10 @@ function update(self, dt)
           local row, col = board.snap_cell(self.board, x, y)
           if row and col and not board.get(self.board, row, col) then
             -- hypothetically place the bubble and score the outcome
+            -- with the REAL scoring formula: 10 per popped bubble,
+            -- +50 per combo step beyond the first, +20 per dropped
+            -- bubble. A setup (non-pop) shot resets the combo, so it
+            -- costs the combo bonus the next pop would have earned.
             self.board.grid[row] = self.board.grid[row] or {}
             self.board.grid[row][col] = self.current_color
             local cluster = board.cluster(self.board, row, col)
@@ -918,13 +929,53 @@ function update(self, dt)
                 self.board.grid[cell[1]][cell[2]] = nil
               end
               local drops = #board.floating(self.board)
-              score = #cluster * 10 + drops * 15 + row * 0.3
+              score = #cluster * 10 + 50 * self.combo + drops * 20
+                + row * 0.3
+              -- setup for the NEXT shot: a ready group of the next
+              -- loaded colour left on the board is worth a bonus
+              local best_next, seen_next = 0, {}
+              for r = 1, self.board.rows do
+                for c = 1, board.COLS do
+                  if board.get(self.board, r, c) == self.next_color and
+                     not seen_next[r .. "," .. c] then
+                    local nc = board.cluster(self.board, r, c)
+                    for _, cell in ipairs(nc) do
+                      seen_next[cell[1] .. "," .. cell[2]] = true
+                    end
+                    if #nc > best_next then best_next = #nc end
+                  end
+                end
+              end
+              if best_next >= 2 then score = score + best_next * 4 end
               for _, cell in ipairs(cluster) do
                 self.board.grid[cell[1]][cell[2]] = self.current_color
               end
             else
               -- setup shot: grow a same-colour group for next time
               score = #cluster * 2 + row * 0.05
+              -- placing next to a bubble of the NEXT loaded colour
+              -- builds a pair the next shot can complete into a pop
+              local offs
+              if row % 2 == 1 then
+                offs = { { -1, -1 }, { -1, 0 }, { 0, -1 }, { 0, 1 },
+                         { 1, -1 }, { 1, 0 } }
+              else
+                offs = { { -1, 0 }, { -1, 1 }, { 0, -1 }, { 0, 1 },
+                         { 1, 0 }, { 1, 1 } }
+              end
+              local adj_next = 0
+              for _, off in ipairs(offs) do
+                if board.get(self.board, row + off[1], col + off[2])
+                   == self.next_color then
+                  adj_next = adj_next + 1
+                end
+              end
+              score = score + math.min(adj_next, 2) * 12
+              -- a setup shot breaks the combo chain: charge it the
+              -- combo bonus the next pop would have earned
+              if self.combo > 0 then
+                score = score - 50 * self.combo
+              end
             end
             self.board.grid[row][col] = nil
             if score > best_score + 0.001 or

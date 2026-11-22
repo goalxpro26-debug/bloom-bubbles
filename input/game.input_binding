@@ -27,6 +27,10 @@ key_trigger {
   action: "pause_key"
 }
 key_trigger {
+  input: KEY_U
+  action: "debug_unlock"
+}
+key_trigger {
   input: KEY_ESC
   action: "pause_key"
 }

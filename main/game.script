@@ -106,7 +106,17 @@ local function show_ad(self)
 end
 
 function on_message(self, message_id, message, sender)
-  if message_id == hash("ui_play") then
+  if message_id == hash("ui_debug_unlock") then
+    -- QA aid only (not a player feature): U on the title screen unlocks
+    -- all levels in memory so later levels can be spot-checked. The
+    -- unlock is session-only (not persisted); winning a level still
+    -- persists progress normally via ui_level_won.
+    if self.screen == "title" then
+      self.save.unlocked = #levels.LEVELS
+      print("debug unlock: all levels unlocked (session only)")
+      show_title(self)
+    end
+  elseif message_id == hash("ui_play") then
     -- First Play tap shows the pre-roll ad (immediate user-input reaction).
     if not self.save.played_once then
       self.save.played_once = true

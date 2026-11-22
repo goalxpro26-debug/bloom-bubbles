@@ -9,7 +9,7 @@ Aim the blossom shooter, match 3+ flower-bud bubbles of the same colour to
 pop them. Bubbles left hanging with nothing above them fall away. A new row
 drops in every few shots — don't let any bubble cross the red danger line.
 
-- **12 levels** with missions: clear the board, pop N of one colour, or
+- **20 levels** with missions: clear the board, pop N of one colour, or
   reach a score target. Stars (1–3) by shots left; progress saved.
 - **Endless mode**: score attack, rows keep coming, best score saved.
 - **Missions UI**: mission text + live progress on the HUD, mission-complete
@@ -119,7 +119,7 @@ page/console errors (excluding GD SDK ad-network noise).
 
 - `main/` — `game.script` (controller/save/GD/music), `gui.gui_script`
   (all screens, board rendering, input, animations), `board.lua` (pure
-  board logic), `levels.lua` (12 levels + endless), `audio.lua`
+  board logic), `levels.lua` (20 levels + endless), `audio.lua`
 - `art/` — PIL-drawn PNGs + `atlas.atlas`
 - `audio/` — synthesized WAVs + `.sound` files + `audio.go`
 - `tools/` — `make_art.py`, `synth_audio.py`

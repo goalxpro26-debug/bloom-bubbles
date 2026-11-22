@@ -1,0 +1,22 @@
+Bloom Bubbles GD SDK evidence — 2026-11-22T20:27:29.337Z
+served from http://localhost:8901 (serve-coop.py, COOP same-origin + COEP require-corp)
+
+window.gdsdk: undefined
+window.gdsdk.showAd: false
+window.GD_OPTIONS: object
+window.GD_OPTIONS.gameId: "PLACEHOLDER"
+window.GD_DEFOLD: object
+window.GD_DEFOLD.onEvent: function
+
+console lines mentioning SDK/gdsdk (0):
+
+failed requests / HTTP>=400 (1):
+https://html5.api.gamedistribution.com/main.min.js :: net::ERR_PROXY_CONNECTION_FAILED
+
+ALL console lines (6):
+error: Failed to load resource: net::ERR_PROXY_CONNECTION_FAILED
+error: Failed to load resource: the server responded with a status of 404 (File not found)
+log: Running...
+log: %c    %c    Made with Defold    %c    %c    https://www.defold.com background: #fd6623; padding:5px 0; border: 5px; background: #272c31; color: #fafafa; padding:5px 0; background: #39a3e4; padding:5px 0; background: #ffffff; color: #000000; padding:5px 0;
+log: 
+error: Failed to load resource: the server responded with a status of 404 (File not found)

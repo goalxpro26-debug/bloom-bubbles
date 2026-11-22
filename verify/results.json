@@ -37,12 +37,12 @@
   {
     "name": "level 1 won by autoplay",
     "ok": true,
-    "detail": "score=1250 bubbles=0"
+    "detail": "score=1350 bubbles=0"
   },
   {
     "name": "score increased during play",
     "ok": true,
-    "detail": "score=1250"
+    "detail": "score=1350"
   },
   {
     "name": "level 2 board populated",
@@ -52,7 +52,7 @@
   {
     "name": "endless mode scores",
     "ok": true,
-    "detail": "score 0 -> 40"
+    "detail": "score 0 -> 60"
   },
   {
     "name": "pause in endless works",

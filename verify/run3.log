@@ -1,0 +1,66 @@
+FAIL  SDK: window.gdsdk present  [typeof=undefined]
+PASS  SDK: window.GD_OPTIONS present with gameId PLACEHOLDER  [gameId="PLACEHOLDER"]
+PASS  SDK: window.GD_DEFOLD present with onEvent  [typeof=object onEvent=function]
+FAIL  SDK: SDK_READY (or equivalent init event) in console  [no SDK lines in console]
+PASS  title screen ready for progression run  [{"screen":"title","score":"0","bubbles":"0","shots":"0","level":"0","endless":"0","auto":"0","paused":"0"}]
+PASS  level 1 starts  [{"screen":"play","score":"0","bubbles":"30","shots":"35","level":"1","endless":"0","auto":"0","paused":"0"}]
+PASS  autoplay bot toggles on  [auto=1]
+--- level 1 attempt 1/5 ---
+  ... waiting level 1 finishes 0s last={"screen":"play","score":"0","bubbles":"30","shots":"35","level":"1","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 1 finishes 20s last={"screen":"play","score":"540","bubbles":"25","shots":"28","level":"1","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 1 finishes 41s last={"screen":"play","score":"1200","bubbles":"3","shots":"21","level":"1","endless":"0","auto":"1","paused":"0"}
+LEVEL 1: WIN score=1300 shots=16 bubbles=0
+PASS  NEXT LEVEL starts level 2  [{"screen":"play","score":"0","bubbles":"50","shots":"28","level":"2","endless":"0","auto":"1","paused":"0"}]
+--- level 2 attempt 1/5 ---
+  ... waiting level 2 finishes 0s last={"screen":"play","score":"0","bubbles":"51","shots":"27","level":"2","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 2 finishes 20s last={"screen":"play","score":"590","bubbles":"32","shots":"20","level":"2","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 2 finishes 41s last={"screen":"play","score":"1520","bubbles":"25","shots":"14","level":"2","endless":"0","auto":"1","paused":"0"}
+LEVEL 2: WIN score=1940 shots=12 bubbles=13
+PASS  NEXT LEVEL starts level 3  [{"screen":"play","score":"0","bubbles":"50","shots":"28","level":"3","endless":"0","auto":"1","paused":"0"}]
+--- level 3 attempt 1/5 ---
+  ... waiting level 3 finishes 0s last={"screen":"play","score":"0","bubbles":"50","shots":"27","level":"3","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 3 finishes 20s last={"screen":"play","score":"690","bubbles":"34","shots":"21","level":"3","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 3 finishes 41s last={"screen":"play","score":"1240","bubbles":"41","shots":"14","level":"3","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 3 finishes 61s last={"screen":"play","score":"1480","bubbles":"43","shots":"7","level":"3","endless":"0","auto":"1","paused":"0"}
+LEVEL 3: WIN score=2270 shots=3 bubbles=32
+PASS  NEXT LEVEL starts level 4  [{"screen":"play","score":"0","bubbles":"50","shots":"30","level":"4","endless":"0","auto":"1","paused":"0"}]
+--- level 4 attempt 1/5 ---
+  ... waiting level 4 finishes 0s last={"screen":"play","score":"0","bubbles":"50","shots":"29","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 20s last={"screen":"play","score":"800","bubbles":"40","shots":"22","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 41s last={"screen":"play","score":"1870","bubbles":"29","shots":"16","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 62s last={"screen":"play","score":"2840","bubbles":"17","shots":"9","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 82s last={"screen":"play","score":"3300","bubbles":"15","shots":"3","level":"4","endless":"0","auto":"1","paused":"0"}
+level 4 LOST (score=3560), retrying via TRY AGAIN
+--- level 4 attempt 2/5 ---
+  ... waiting level 4 finishes 0s last={"screen":"play","score":"0","bubbles":"50","shots":"29","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 20s last={"screen":"play","score":"800","bubbles":"40","shots":"22","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 41s last={"screen":"play","score":"1380","bubbles":"39","shots":"16","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 62s last={"screen":"play","score":"1740","bubbles":"38","shots":"10","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 82s last={"screen":"play","score":"2760","bubbles":"18","shots":"3","level":"4","endless":"0","auto":"1","paused":"0"}
+level 4 LOST (score=2980), retrying via TRY AGAIN
+--- level 4 attempt 3/5 ---
+  ... waiting level 4 finishes 0s last={"screen":"play","score":"0","bubbles":"51","shots":"29","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 20s last={"screen":"play","score":"800","bubbles":"40","shots":"22","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 41s last={"screen":"play","score":"1580","bubbles":"37","shots":"16","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 61s last={"screen":"play","score":"1970","bubbles":"35","shots":"9","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 82s last={"screen":"play","score":"3130","bubbles":"10","shots":"2","level":"4","endless":"0","auto":"1","paused":"0"}
+level 4 LOST (score=3160), retrying via TRY AGAIN
+--- level 4 attempt 4/5 ---
+  ... waiting level 4 finishes 0s last={"screen":"play","score":"0","bubbles":"50","shots":"29","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 20s last={"screen":"play","score":"800","bubbles":"40","shots":"23","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 41s last={"screen":"play","score":"1560","bubbles":"38","shots":"16","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 61s last={"screen":"play","score":"1840","bubbles":"41","shots":"9","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 82s last={"screen":"play","score":"2800","bubbles":"5","shots":"3","level":"4","endless":"0","auto":"1","paused":"0"}
+level 4 LOST (score=2800), retrying via TRY AGAIN
+--- level 4 attempt 5/5 ---
+  ... waiting level 4 finishes 0s last={"screen":"play","score":"0","bubbles":"50","shots":"29","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 20s last={"screen":"play","score":"800","bubbles":"40","shots":"23","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 41s last={"screen":"play","score":"1870","bubbles":"29","shots":"16","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 62s last={"screen":"play","score":"2840","bubbles":"17","shots":"9","level":"4","endless":"0","auto":"1","paused":"0"}
+  ... waiting level 4 finishes 82s last={"screen":"play","score":"3300","bubbles":"15","shots":"2","level":"4","endless":"0","auto":"1","paused":"0"}
+level 4 LOST (score=3560), retrying via TRY AGAIN
+LEVEL 4: LOSE score=3560 shots=0 bubbles=9
+PASS  no page errors during progression (excluding GD noise)
+
+9/11 checks passed; highest level reached: 4 (bot could not win level 4 after 5 attempt(s))
+per-level: [{"level":1,"won":true,"attempts":1,"score":1300,"shotsLeft":16,"bubblesLeft":0},{"level":2,"won":true,"attempts":1,"score":1940,"shotsLeft":12,"bubblesLeft":13},{"level":3,"won":true,"attempts":1,"score":2270,"shotsLeft":3,"bubblesLeft":32},{"level":4,"won":false,"attempts":5,"score":3560,"shotsLeft":0,"bubblesLeft":9}]

@@ -1,0 +1,187 @@
+{
+  "date": "2026-11-22T20:40:12.098Z",
+  "highestLevelReached": 4,
+  "stopReason": "bot could not win level 4 after 5 attempt(s)",
+  "perLevel": [
+    {
+      "level": 1,
+      "won": true,
+      "attempts": 1,
+      "score": 1300,
+      "shotsLeft": 16,
+      "bubblesLeft": 0
+    },
+    {
+      "level": 2,
+      "won": true,
+      "attempts": 1,
+      "score": 2000,
+      "shotsLeft": 12,
+      "bubblesLeft": 13
+    },
+    {
+      "level": 3,
+      "won": true,
+      "attempts": 1,
+      "score": 2270,
+      "shotsLeft": 3,
+      "bubblesLeft": 32
+    },
+    {
+      "level": 4,
+      "won": false,
+      "attempts": 5,
+      "score": 2940,
+      "shotsLeft": 0,
+      "bubblesLeft": 2
+    }
+  ],
+  "checks": [
+    {
+      "name": "SDK: window.gdsdk present",
+      "ok": false,
+      "detail": "typeof=undefined"
+    },
+    {
+      "name": "SDK: window.GD_OPTIONS present with gameId PLACEHOLDER",
+      "ok": true,
+      "detail": "gameId=\"PLACEHOLDER\""
+    },
+    {
+      "name": "SDK: window.GD_DEFOLD present with onEvent",
+      "ok": true,
+      "detail": "typeof=object onEvent=function"
+    },
+    {
+      "name": "SDK: SDK_READY (or equivalent init event) in console",
+      "ok": false,
+      "detail": "no SDK lines in console"
+    },
+    {
+      "name": "title screen ready for progression run",
+      "ok": true,
+      "detail": "{\"screen\":\"title\",\"score\":\"0\",\"bubbles\":\"0\",\"shots\":\"0\",\"level\":\"0\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+    },
+    {
+      "name": "level 1 starts",
+      "ok": true,
+      "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"30\",\"shots\":\"35\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+    },
+    {
+      "name": "autoplay bot toggles on",
+      "ok": true,
+      "detail": "auto=1"
+    },
+    {
+      "name": "NEXT LEVEL starts level 2",
+      "ok": true,
+      "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"50\",\"shots\":\"28\",\"level\":\"2\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+    },
+    {
+      "name": "NEXT LEVEL starts level 3",
+      "ok": true,
+      "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"50\",\"shots\":\"28\",\"level\":\"3\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+    },
+    {
+      "name": "NEXT LEVEL starts level 4",
+      "ok": true,
+      "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"50\",\"shots\":\"36\",\"level\":\"4\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+    },
+    {
+      "name": "no page errors during progression (excluding GD noise)",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "spotCheck": [
+    {
+      "level": 4,
+      "won": false,
+      "attempts": 3,
+      "score": 3630,
+      "shotsLeft": 0,
+      "bubblesLeft": 10
+    },
+    {
+      "level": 6,
+      "won": false,
+      "attempts": 3,
+      "score": 2500,
+      "shotsLeft": 0,
+      "bubblesLeft": 46
+    },
+    {
+      "level": 7,
+      "won": false,
+      "attempts": 3,
+      "score": 1130,
+      "shotsLeft": 0,
+      "bubblesLeft": 75
+    },
+    {
+      "level": 9,
+      "won": false,
+      "attempts": 3,
+      "score": 3090,
+      "shotsLeft": 0,
+      "bubblesLeft": 32
+    },
+    {
+      "level": 10,
+      "won": false,
+      "attempts": 3,
+      "score": 2030,
+      "shotsLeft": 0,
+      "bubblesLeft": 44
+    },
+    {
+      "level": 12,
+      "won": false,
+      "attempts": 3,
+      "score": 2180,
+      "shotsLeft": 0,
+      "bubblesLeft": 51
+    },
+    {
+      "level": 13,
+      "won": false,
+      "attempts": 3,
+      "score": 3560,
+      "shotsLeft": 0,
+      "bubblesLeft": 42
+    },
+    {
+      "level": 15,
+      "won": false,
+      "attempts": 3,
+      "score": 1730,
+      "shotsLeft": 0,
+      "bubblesLeft": 68
+    },
+    {
+      "level": 16,
+      "won": false,
+      "attempts": 3,
+      "score": 1510,
+      "shotsLeft": 0,
+      "bubblesLeft": 64
+    },
+    {
+      "level": 18,
+      "won": false,
+      "attempts": 3,
+      "score": 2790,
+      "shotsLeft": 0,
+      "bubblesLeft": 46
+    },
+    {
+      "level": 20,
+      "won": false,
+      "attempts": 3,
+      "score": 2380,
+      "shotsLeft": 0,
+      "bubblesLeft": 62
+    }
+  ],
+  "spotCheckDate": "2026-11-22T22:08:50.624Z"
+}

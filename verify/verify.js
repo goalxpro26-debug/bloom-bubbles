@@ -136,6 +136,7 @@ function pngDistinctColors(buf) {
       '--autoplay-policy=no-user-gesture-required',
       '--disable-features=LocalNetworkAccessChecks,BlockInsecurePrivateNetworkRequests,local-network-access-check',
       '--proxy-server=http://127.0.0.1:3129',
+      '--proxy-bypass-list=127.0.0.1,localhost', // local game direct; GD SDK via proxy
       '--ignore-certificate-errors'], // egress proxy MITMs TLS with its own CA
   });
   const page = await browser.newPage({
