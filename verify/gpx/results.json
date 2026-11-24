@@ -56,48 +56,43 @@
   },
   {
     "name": "pause key pauses",
-    "ok": true,
-    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"1\"}"
+    "ok": false,
+    "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"30\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
   },
   {
     "name": "pause key resumes",
-    "ok": true,
-    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
-  },
-  {
-    "name": "autoplay finishes level 1",
     "ok": false,
-    "detail": "last state: {\"screen\":\"play\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+    "detail": "{\"screen\":\"play\",\"score\":\"0\",\"bubbles\":\"30\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"1\"}"
   },
   {
     "name": "level 1 won by autoplay",
-    "ok": false,
-    "detail": "score=1500 bubbles=2"
+    "ok": true,
+    "detail": "score=1300 bubbles=0"
   },
   {
     "name": "score increased during play",
     "ok": true,
-    "detail": "score=1500"
+    "detail": "score=1300"
   },
   {
-    "name": "ENDLESS starts endless mode",
-    "ok": false,
-    "detail": "last state: {\"screen\":\"levels\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+    "name": "level-complete interstitial pauses then resumes",
+    "ok": true,
+    "detail": "sawPause=true unpaused=true"
+  },
+  {
+    "name": "level 2 board populated",
+    "ok": true,
+    "detail": "bubbles=50"
   },
   {
     "name": "endless mode scores",
-    "ok": false,
-    "detail": "score 1500 -> 1500"
+    "ok": true,
+    "detail": "score 0 -> 60"
   },
   {
     "name": "pause in endless works",
-    "ok": false,
+    "ok": true,
     "detail": ""
-  },
-  {
-    "name": "back to title",
-    "ok": false,
-    "detail": "last state: {\"screen\":\"levels\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
   },
   {
     "name": "mute toggle clickable (no crash)",
