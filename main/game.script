@@ -1,8 +1,9 @@
--- Bloom Bubbles: controller. Owns save data, level flow, GD SDK, music.
+-- Bloom Bubbles: controller. Owns save data, level flow, GamePix SDK, music.
 -- The view (gui#gui) owns the board and all input; this script owns the
--- screens' data, persistence, and ad calls. All gdsdk calls are guarded so
--- the game still runs if the SDK is absent.
+-- screens' data, persistence, and ad calls. All GamePix calls go through
+-- main/gpx.lua and are guarded so the game still runs if the SDK is absent.
 local audio = require("main.audio")
+local gpx = require("main.gpx")
 local levels = require("main.levels")
 
 local GUI = "gui#gui"
@@ -47,6 +48,9 @@ local function show_title(self)
     endless_best = self.save.endless_best,
     muted = self.save.muted,
   })
+  -- The title screen is up: the game can be shown (GamePix manual
+  -- lifecycle). gpx.loaded() is once-only, so re-showing the title is safe.
+  gpx.loaded()
 end
 
 local function show_levels(self)
@@ -66,6 +70,8 @@ local function start_level(self, n, endless)
   local def = endless and levels.ENDLESS or levels.get(n)
   stop_music()
   audio.play("bgm_game")
+  -- First level start is real gameplay start (GamePix manual lifecycle).
+  gpx.game_start()
   msg.post(GUI, "show_play", {
     level = n,
     endless = endless or false,
@@ -82,27 +88,33 @@ function init(self)
   self.user_paused = false
   audio.register(SOUNDS)
   audio.set_muted(self.muted)
-  if gdsdk then
-    pcall(gdsdk.set_listener, function(s, event, message)
-      print("GD event", event, message)
-      if event == gdsdk.SDK_GAME_PAUSE then
-        self.ad_paused = true
-        audio.set_muted(true)
-        msg.post(GUI, "gd_pause", {})
-      elseif event == gdsdk.SDK_GAME_START then
-        self.ad_paused = false
-        audio.set_muted(self.muted)
-        msg.post(GUI, "gd_resume", {})
-      end
-    end)
-  end
+  -- No listener to register: the GamePix Player calls the SDK pause/resume
+  -- handlers (injected glue in index.html) around ads, and update() polls
+  -- the resulting flags once per frame (see below).
   show_title(self)
 end
 
-local function show_ad(self)
-  if gdsdk then
-    pcall(gdsdk.show_interstitial_ad)
+function update(self, dt)
+  -- GamePix ad pause: the Player fires the SDK pause handler before an ad
+  -- and the resume handler after it (or immediately if no ad could be
+  -- shown / the ad errored). The injected glue sets window.__gpx_paused
+  -- and window.__gpx_hidden; poll once per frame and apply transitions.
+  -- The flags are the source of truth, so a missed event can never leave
+  -- the game stuck paused or muted.
+  local want = gpx.poll_paused()
+  if want and not self.ad_paused then
+    self.ad_paused = true
+    audio.set_muted(true)
+    msg.post(GUI, "ad_pause", {})
+  elseif not want and self.ad_paused then
+    self.ad_paused = false
+    audio.set_muted(self.muted)
+    msg.post(GUI, "ad_resume", {})
   end
+end
+
+local function show_ad(self)
+  gpx.show_interstitial()
 end
 
 function on_message(self, message_id, message, sender)
@@ -149,6 +161,7 @@ function on_message(self, message_id, message, sender)
     self.screen = "win"
     stop_music()
     audio.play("sfx_win")
+    gpx.happy_moment("level_complete")
     msg.post(GUI, "show_win", {
       level = n, endless = self.endless, score = message.score or 0,
       stars = stars, has_next = (not self.endless) and n < #levels.LEVELS,
@@ -163,6 +176,7 @@ function on_message(self, message_id, message, sender)
     self.screen = "lose"
     stop_music()
     audio.play("sfx_lose")
+    gpx.sad_moment(self.endless and "game_over" or "level_failed")
     msg.post(GUI, "show_lose", {
       level = self.level, endless = self.endless,
       score = message.score or 0,

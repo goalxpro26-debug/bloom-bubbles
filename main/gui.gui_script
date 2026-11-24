@@ -361,6 +361,7 @@ local function show_play(self, data)
   self.end_timer = 0
   self.ai_timer = 1.0
   self.paused = false
+  self.user_paused = false -- a fresh game clears any stale pause state (quit-to-title left it true; ad_resume would otherwise re-pause the game after the next ad)
   self.aiming = false
   self.aim = 0
   clear_all(self)
@@ -1021,9 +1022,9 @@ function on_message(self, message_id, message, sender)
     self.user_paused = false
     self.paused = false
     clear_overlay(self)
-  elseif message_id == hash("gd_pause") then
+  elseif message_id == hash("ad_pause") then
     self.paused = true
-  elseif message_id == hash("gd_resume") then
+  elseif message_id == hash("ad_resume") then
     self.paused = self.user_paused or false
   elseif message_id == hash("set_mute") then
     self.muted = message.muted

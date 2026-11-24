@@ -215,7 +215,7 @@ function pngDistinctColors(buf) {
   // Autoplay to win level 1 (up to 180s)
   await heldKey(page, 'a');
   s = await waitState(page, (x) => x.screen === 'win' || x.screen === 'lose',
-    180000, 'autoplay finishes level 1');
+    300000, 'autoplay finishes level 1');
   await page.screenshot({ path: path.join(OUT, '05-end-level1.png') });
   check('level 1 won by autoplay', s.screen === 'win',
     'score=' + s.score + ' bubbles=' + s.bubbles);

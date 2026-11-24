@@ -121,8 +121,8 @@ async function waitStateLog(page, pred, timeoutMs, label) {
   ].join('\n');
   fs.writeFileSync(path.join(OUT, 'console-sdk.log'), sdkLog);
   check('SDK: window.gdsdk present', sdk.gdsdk !== 'undefined', 'typeof=' + sdk.gdsdk);
-  check('SDK: window.GD_OPTIONS present with gameId PLACEHOLDER',
-    sdk.GD_OPTIONS !== 'undefined' && sdk.GD_OPTIONS_gameId === 'PLACEHOLDER',
+  check('SDK: window.GD_OPTIONS present with gameId 07955f6876a044aba4887d68e84123ca',
+    sdk.GD_OPTIONS !== 'undefined' && sdk.GD_OPTIONS_gameId === '07955f6876a044aba4887d68e84123ca',
     'gameId=' + JSON.stringify(sdk.GD_OPTIONS_gameId));
   check('SDK: window.GD_DEFOLD present with onEvent',
     sdk.GD_DEFOLD !== 'undefined' && sdk.GD_DEFOLD_onEvent === 'function',

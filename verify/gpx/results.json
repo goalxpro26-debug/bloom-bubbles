@@ -1,0 +1,112 @@
+[
+  {
+    "name": "page loads, title state reported",
+    "ok": true,
+    "detail": "{\"screen\":\"title\",\"score\":\"0\",\"bubbles\":\"0\",\"shots\":\"0\",\"level\":\"0\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "GamePix SDK loads (window.GamePix object)",
+    "ok": true,
+    "detail": "{\"obj\":\"object\",\"lifecycle\":\"function\",\"ads\":\"function\",\"events\":\"function\"}"
+  },
+  {
+    "name": "GamePix lifecycle/ads/events API present",
+    "ok": true,
+    "detail": "{\"obj\":\"object\",\"lifecycle\":\"function\",\"ads\":\"function\",\"events\":\"function\"}"
+  },
+  {
+    "name": "GamePix loaded() reported from Lua at title",
+    "ok": true,
+    "detail": "flag=1"
+  },
+  {
+    "name": "no GameDistribution residue in page (GD_OPTIONS/gdsdk absent)",
+    "ok": true,
+    "detail": "{\"gdOptions\":\"undefined\",\"gdsdk\":\"undefined\"}"
+  },
+  {
+    "name": "canvas non-blank (title screenshot, distinct colors)",
+    "ok": true,
+    "detail": "distinct=501"
+  },
+  {
+    "name": "pre-roll interstitial pauses then resumes",
+    "ok": true,
+    "detail": "sawPause=true unpaused=true"
+  },
+  {
+    "name": "GamePix gameStart() reported from Lua on level start",
+    "ok": true,
+    "detail": "flag=1"
+  },
+  {
+    "name": "level 1 board populated",
+    "ok": true,
+    "detail": "bubbles=30"
+  },
+  {
+    "name": "level 1 has shots",
+    "ok": true,
+    "detail": "shots=35"
+  },
+  {
+    "name": "manual click fires a bubble (shots decrease)",
+    "ok": true,
+    "detail": "shots 35 -> 34"
+  },
+  {
+    "name": "pause key pauses",
+    "ok": true,
+    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"1\"}"
+  },
+  {
+    "name": "pause key resumes",
+    "ok": true,
+    "detail": "{\"screen\":\"play\",\"score\":\"30\",\"bubbles\":\"28\",\"shots\":\"34\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "autoplay finishes level 1",
+    "ok": false,
+    "detail": "last state: {\"screen\":\"play\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "level 1 won by autoplay",
+    "ok": false,
+    "detail": "score=1500 bubbles=2"
+  },
+  {
+    "name": "score increased during play",
+    "ok": true,
+    "detail": "score=1500"
+  },
+  {
+    "name": "ENDLESS starts endless mode",
+    "ok": false,
+    "detail": "last state: {\"screen\":\"levels\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"1\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "endless mode scores",
+    "ok": false,
+    "detail": "score 1500 -> 1500"
+  },
+  {
+    "name": "pause in endless works",
+    "ok": false,
+    "detail": ""
+  },
+  {
+    "name": "back to title",
+    "ok": false,
+    "detail": "last state: {\"screen\":\"levels\",\"score\":\"1500\",\"bubbles\":\"2\",\"shots\":\"0\",\"level\":\"1\",\"endless\":\"0\",\"auto\":\"0\",\"paused\":\"0\"}"
+  },
+  {
+    "name": "mute toggle clickable (no crash)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no page/console errors (excluding GamePix SDK network noise)",
+    "ok": true,
+    "detail": ""
+  }
+]
